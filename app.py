@@ -4,44 +4,57 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Oxygen-Hb Curve Training", layout="wide")
 
-st.title("Oxyhemoglobin Dissociation Curve Interactive")
-st.markdown("### Fellows: Enter your PaO2 (kPa) to plot your point")
+st.title("🫁 Interactive Oxyhemoglobin Curve (Steep View)")
+st.markdown("### Focus: The critical 0-10 kPa range")
 
-# Function for the standard curve (Severinghaus)
+# Severinghaus function for SaO2 calculation
 def get_sao2(pa_o2_kpa):
     p_mmhg = pa_o2_kpa * 7.5006
     if p_mmhg <= 0: return 0
+    # Standard equation for the curve
     return ((((p_mmhg**3 + 150*p_mmhg)**-1)*23400) + 1)**-1 * 100
 
-# Create inputs for 6 doctors in the sidebar
-st.sidebar.header("Data Entry")
-names = ["Dr. 1", "Dr. 2", "Dr. 3", "Dr. 4", "Dr. 5", "Dr. 6"]
+st.sidebar.header("Plotting Session")
+st.sidebar.info("Assign each doctor a kPa value to see where it lands.")
+
+names = ["Dr. 1 (P50)", "Dr. 2 (Venous)", "Dr. 3 (Shoulder)", "Dr. 4 (Arterial)", "Dr. 5", "Dr. 6"]
 inputs = []
-for name in names:
-    inputs.append(st.sidebar.number_input(f"{name} (kPa)", 0.0, 20.0, 0.0, step=0.1))
+# Default values provided to help guide the steep curve shape
+defaults = [3.7, 5.6, 8.0, 13.3, 2.5, 1.0] 
+
+for i, name in enumerate(names):
+    val = st.sidebar.number_input(f"{name} PaO2", 0.0, 20.0, value=0.0, step=0.1)
+    inputs.append(val)
 
 # Generate the true curve line
-x_vals = np.linspace(0, 20, 200)
+x_vals = np.linspace(0, 20, 300)
 y_vals = [get_sao2(x) for x in x_vals]
 
 fig = go.Figure()
 
-# Add the correct physiological curve
-fig.add_trace(go.Scatter(x=x_vals, y=y_vals, name='Standard Curve', line=dict(color='gray', dash='dash')))
+# The physiological curve
+fig.add_trace(go.Scatter(x=x_vals, y=y_vals, name='Physiological Curve', 
+                         line=dict(color='royalblue', width=4)))
 
-# Add the doctors' points
-y_points = [get_sao2(i) for i in inputs if i > 0]
+# The fellows' points
 x_points = [i for i in inputs if i > 0]
+y_points = [get_sao2(i) for i in x_points]
 fig.add_trace(go.Scatter(x=x_points, y=y_points, mode='markers+text', 
-                         text=names[:len(x_points)], textposition="top center",
-                         marker=dict(size=12, color='red'), name="Fellows' Points"))
+                         text=[names[i] for i, v in enumerate(inputs) if v > 0],
+                         textposition="top left",
+                         marker=dict(size=14, color='red', symbol='circle'), 
+                         name="Fellows' Points"))
 
-fig.update_layout(xaxis_title="PaO2 (kPa)", yaxis_title="SaO2 (%)",
-                  xaxis=dict(range=[0, 20], dtick=2), yaxis=dict(range=[0, 105]))
+# STEEP VIEW: We limit the visible range to 0-15 kPa to make the 0-10 section look larger
+fig.update_layout(
+    xaxis_title="Partial Pressure (PaO2 in kPa)",
+    yaxis_title="Saturation (SaO2 %)",
+    xaxis=dict(range=[0, 15], dtick=1), # Zoomed in for a steeper look
+    yaxis=dict(range=[0, 105], tickvals=[0, 25, 50, 75, 90, 100]),
+    height=700,
+    template="plotly_white"
+)
 
 st.plotly_chart(fig, use_container_width=True)
 
-# Landmarks Table
-st.markdown("---")
-st.markdown("### Reference Landmarks")
-st.table({"Point": ["P50", "Venous (75%)", "Arterial (98%)"], "PaO2 (kPa)": [3.7, 5.6, 13.3]})
+st.success("💡 Discussion Point: Notice how the curve is almost vertical between 2 and 7 kPa!")
