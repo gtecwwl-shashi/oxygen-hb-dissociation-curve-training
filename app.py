@@ -20,7 +20,7 @@ st.sidebar.info("Assign each doctor a kPa value to see where it lands.")
 names = ["Dr. 1 (P50)", "Dr. 2 (Venous)", "Dr. 3 (Shoulder)", "Dr. 4 (Arterial)", "Dr. 5", "Dr. 6"]
 inputs = []
 # Default values provided to help guide the steep curve shape
-defaults = [3.7, 5.6, 8.0, 13.3, 2.5, 1.0] 
+defaults = [3.7, 5.6, 8.0, 13.3, 15] 
 
 for i, name in enumerate(names):
     val = st.sidebar.number_input(f"{name} PaO2", 0.0, 15.0, value=0.0, step=2.5)
