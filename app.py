@@ -23,7 +23,7 @@ inputs = []
 defaults = [3.7, 5.6, 8.0, 13.3, 2.5, 1.0] 
 
 for i, name in enumerate(names):
-    val = st.sidebar.number_input(f"{name} PaO2", 0.0, 20.0, value=0.0, step=0.1)
+    val = st.sidebar.number_input(f"{name} PaO2", 0.0, 20.0, value=0.0, step=0.5)
     inputs.append(val)
 
 # Generate the true curve line
