@@ -2,67 +2,69 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Oxygen-Hb Exam Simulation", layout="wide")
+st.set_page_config(page_title="Oxygen-Hb Discovery Session", layout="wide")
 
-st.title("🫁 Oxyhemoglobin Curve: Exam Mode")
-st.markdown("### Challenge: Plot the key points of the curve from memory.")
+st.title("🫁 Oxyhemoglobin Curve: Interactive Workshop")
 
 def get_sao2(pa_o2_kpa):
     p_mmhg = pa_o2_kpa * 7.5006
     if p_mmhg <= 0: return 0
     return ((((p_mmhg**3 + 150*p_mmhg)**-1)*23400) + 1)**-1 * 100
 
-# Sidebar for Fellows' Inputs
-st.sidebar.header("Exam Data Entry")
-names = ["Doctor A", "Doctor B", "Doctor C", "Doctor D", "Doctor E", "Doctor F"]
+# --- PHASE 1: LABELING ---
+st.sidebar.header("Phase 1: Label the Graph")
+x_label_input = st.sidebar.text_input("What is the X-axis?", "")
+y_label_input = st.sidebar.text_input("What is the Y-axis?", "")
+
+# --- PHASE 2: PLOTTING ---
+st.sidebar.header("Phase 2: Plot the Points")
+names = ["Doctor 1", "Doctor 2", "Doctor 3", "Doctor 4", "Doctor 5", "Doctor 6"]
 inputs = []
-
 for name in names:
-    val = st.sidebar.number_input(f"{name} - Pick a PaO2 (kPa)", 0.0, 20.0, value=0.0, step=0.1)
+    val = st.sidebar.number_input(f"{name} PaO2 (kPa)", 0.0, 20.0, value=0.0, step=0.1)
     inputs.append(val)
-
-# Generate Data for the "Reveal" (hidden until you check the box)
-x_vals = np.linspace(0, 20, 500)
-y_vals = [get_sao2(x) for x in x_vals]
 
 fig = go.Figure()
 
-# Plot Fellows' points ONLY
+# Plot Fellows' points
 for i, val in enumerate(inputs):
     if val > 0:
         sat = round(get_sao2(val), 1)
         fig.add_trace(go.Scatter(
             x=[val], y=[sat], 
             mode='markers+text',
-            text=[f"{names[i]}<br>({val} kPa)"], 
+            text=[f"{names[i]}<br>({val}, {sat}%)"], 
             textposition="top center",
             marker=dict(size=18, color='crimson', symbol='circle'),
             showlegend=False
         ))
 
-# EXAM FORMATTING: No background lines, no reference curve
+# AXIS CONFIGURATION (0-14 with 2 kPa gaps)
 fig.update_layout(
-    xaxis_title="PaO2 (kPa)",
-    yaxis_title="SaO2 (%)",
+    xaxis_title=x_label_input if x_label_input else "???",
+    yaxis_title=y_label_input if y_label_input else "???",
     xaxis=dict(
-        range=[0, 15], 
-        showgrid=False, # Removed grid for exam mode
-        tickvals=[0, 2.5, 5, 8, 10, 15] # The requested gaps
+        range=[0, 14], 
+        tickvals=[0, 2, 4, 6, 8, 10, 12, 14], # Your requested 2 kPa gaps
+        showgrid=True,
+        gridcolor='lightgray'
     ),
     yaxis=dict(
         range=[0, 105], 
-        showgrid=False, # Removed grid for exam mode
-        tickvals=[0, 25, 50, 75, 100]
+        tickvals=[0, 25, 50, 75, 100],
+        showgrid=True,
+        gridcolor='lightgray'
     ),
     height=750,
-    template="plotly_white",
-    plot_bgcolor='white'
+    template="plotly_white"
 )
 
-# REVEAL TOGGLE: Only shows the curve when you are ready to mark them
-reveal = st.checkbox("REVEAL CORRECT SIGMOID CURVE")
+# REVEAL THE CURVE
+reveal = st.checkbox("FINAL STEP: Reveal the Sigmoid Curve")
 if reveal:
-    fig.add_trace(go.Scatter(x=x_vals, y=y_vals, name='Correct Curve', 
+    x_curve = np.linspace(0, 14, 500)
+    y_curve = [get_sao2(x) for x in x_curve]
+    fig.add_trace(go.Scatter(x=x_curve, y=y_curve, name='Standard Curve', 
                              line=dict(color='black', width=3)))
 
 st.plotly_chart(fig, use_container_width=True)
